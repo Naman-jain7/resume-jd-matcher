@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from backend.utils.security import hash_password
+from bson import ObjectId
 import os
 
 load_dotenv()
@@ -10,15 +11,13 @@ db = client['qna']
 users_collection = db['users']
 
 def add_user_to_db(first_name, last_name, email, password):
-    user_id = first_name[0] + last_name[0] + email[5]
     result = users_collection.insert_one({
-        "user_id": user_id,
         "first_name": first_name, 
         "last_name": last_name, 
         "email": email, 
         "password": hash_password(password)
     })
-    return str(result.inserted_id)
+    return users_collection.find_one({'_id':result.inserted_id})
 
 def get_user_by_email(email, password):
     """Retrieves user doc by email and password"""

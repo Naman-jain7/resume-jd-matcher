@@ -10,7 +10,8 @@
 
 <body>
 
-    <form class="container" action="/signup" method="post">
+    <form class="container" action="/signup/" method="post">
+        {% csrf_token %}
         <div class="form-section">
             <h2>Create an account</h2>
             <p class="login-text">Already have an account? <a href="/user/login">Login</a></p>
