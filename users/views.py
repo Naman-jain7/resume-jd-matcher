@@ -2,7 +2,7 @@
 from django.shortcuts import render,redirect
 from django.http import HttpResponse
 from django.contrib import messages
-from backend.services.database import add_user_to_db, get_user
+from backend.services.database import add_user_to_db, get_user_by_email
 
 # Create your views here.
 def signup_view(request):
@@ -12,8 +12,7 @@ def signup_view(request):
         email=request.POST.get('email')
         password=request.POST.get('password')
         
-        add_user_to_db(first_name, last_name, email, password)
-        user = get_user(email,password)
+        user = add_user_to_db(first_name, last_name, email, password)
         if not user:
             messages.error(request, "Error creating account")
             return render(request, "signup.html")
@@ -21,13 +20,14 @@ def signup_view(request):
         user_id=user['user_id']
         messages.success(request, "Account created successfully")
         return redirect(f"/home/{user_id}")
-    return render("signup.html")
+    
+    return render(request, "signup.html")
 
 def login_view(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
-        user = get_user(email, password)
+        user = get_user_by_email(email,password)
         if not user:
             messages.error(request, "Invalid credentials.")
             return render(request, "login.html")
