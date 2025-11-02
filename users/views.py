@@ -51,3 +51,5 @@ def settings_view(request):
     # return render(request, 'settings.html',context)
     pass
 
+def forgot_password_view(request):
+    return render(request, 'forgot_password.html')
