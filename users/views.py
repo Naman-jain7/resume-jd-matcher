@@ -1,22 +1,13 @@
 # logic of each route
 from django.shortcuts import render,redirect
-from django.http import HttpResponse
+from django.http import HttpResponse,HttpResponseNotFound
 from django.contrib import messages
-from backend.services.database import add_user_to_db, get_user_by_email
+from backend.services.database import add_user_to_db, get_user_by_email, users_collection
+from bson import ObjectId
 
 def home_view(request):
     return render(request, 'home.html')
 
-def dashboard_view(request, user_id):
-    return render(request,'dashboard.html')
-
-def settings_view(request):
-    # user_id = 
-    # context = {'user_id':user_id}
-    # return render(request, 'settings.html',context)
-    pass
-
-# Create your views here.
 def signup_view(request):
     if request.method=="POST":
         first_name=request.POST.get('first_name')
@@ -39,9 +30,23 @@ def login_view(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
-        user = get_user_by_email(email,password)
+        user = get_user_by_email(email, password)
         if not user:
             messages.error(request, "Invalid credentials.")
             return render(request, "login.html")
-        return redirect(f"/user/{user['user_id']}")
+        return redirect(f"/user/{str(user['_id'])}/")
     return render(request, "login.html")
+
+def dashboard_view(request, user_id):
+    user = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        return HttpResponseNotFound("User not found")
+    context={'user':user}
+    return render(request,'dashboard.html',context)
+
+def settings_view(request):
+    # user_id = 
+    # context = {'user_id':user_id}
+    # return render(request, 'settings.html',context)
+    pass
+

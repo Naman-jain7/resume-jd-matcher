@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
     <link rel="stylesheet" href="/static/css/dashboard.css">
-    <link rel="stylesheet" href="../static/css/dashboard.css">
+    <link rel="stylesheet" href="{% static "css/dashboard.css" %}">
 </head>
 
 <body>
@@ -19,10 +20,10 @@
         <h1>Welcome back, {{ username }}</h1>
 
         <nav class="nav-bar">
-            <button href="">Home</button>
-            <button href="#">Add/Edit Note</button>
-            <button href="/chatbot">Chatbot</button>
-            <button href="/settings">Settings</button>
+            <button onclick="location.href='/'">Home</button>
+            <button onclick="location.href='manage-notes'">Add/Edit Note</button>
+            <button onclick="location.href='chatbot'">Chatbot</button>
+            <button onclick="location.href='settings'">Settings</button>
         </nav>
 
         <section class="docs-section">

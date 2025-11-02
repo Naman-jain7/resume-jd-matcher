@@ -23,7 +23,6 @@ def get_user_by_email(email, password):
     """Retrieves user doc by email and password"""
     
     user = users_collection.find_one(
-        {"email":email, "password":hash_password(password)},
-        {"_id":0}
+        {"email":email, "password":hash_password(password)}
     )
     return user
