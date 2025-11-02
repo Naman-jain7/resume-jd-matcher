@@ -34,6 +34,7 @@ def login_view(request):
         if not user:
             messages.error(request, "Invalid credentials.")
             return render(request, "login.html")
+        print("user found")
         return redirect(f"/user/{str(user['_id'])}/")
     return render(request, "login.html")
 
