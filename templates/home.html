@@ -10,18 +10,12 @@
   <title>Home Page</title>
 </head>
 <body>
+  {% include "navbar.html" %}
   <div class="search-box">
     <input type="text" placeholder="Search">
     <button>Search</button>
   </div>
 
-  <nav class="navbar">
-    <ul class="nav-links">
-      <li><a href="/signup">Sign up</a></li>
-      <li><a href="/login">Log in</a></li>
-      <li><a href="/user/{{user_id}}">Dashboard</a></li>
-      <li><a href="/user/{{user_id}}/settings">Settings</a></li>
-    </ul>
-  </nav>
+  
 </body>
 </html>
