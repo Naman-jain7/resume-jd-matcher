@@ -36,8 +36,8 @@ def login_view(request):
         password = request.POST.get("password")
         user = get_user_by_email(email, password)
         if not user:
-            messages.error(request, "Invalid credentials.")
-            return render(request, "login.html")
+            context = {'error':"Invalid credentials"}
+            return render(request, "login.html", context)
         print("user found")
         return redirect(f"/user/{str(user['_id'])}/")
     return render(request, "login.html")
