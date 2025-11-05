@@ -4,7 +4,7 @@ from django.http import HttpResponse,HttpResponseNotFound
 from django.core.cache import cache
 from datetime import timedelta
 from django.contrib import messages
-from backend.services.database import add_user_to_db, get_user_by_email, users_collection
+from backend.utils.database import add_user_to_db, get_user_by_email, users_collection
 from backend.utils.notification import send_email
 from backend.utils.security import hash_password
 from bson import ObjectId
@@ -107,9 +107,3 @@ def reset_password_view(request):
         else:
             messages.error(request, "Invalid OTP.")
     return render(request, 'reset_password.html')
-
-def manage_notes_view(request):
-    pass
-
-def chatbot_view(request):
-    pass
