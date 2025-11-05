@@ -1,0 +1,83 @@
+body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    /* background: linear-gradient(120deg, #0a0a0a, #202020); */
+    color: white;
+}
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 90%;
+    height: 65px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 80px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 2px 15px #e5d2b3;
+    z-index: 1000;
+    transition: background 0.3s ease;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: white;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    position: relative;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    padding: 6px 0;
+}
+
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -3px;
+    width: 0%;
+    height: 2px;
+    background: #28ea0b;
+    transition: width 0.3s ease;
+}
+
+.nav-links a:hover::after {
+    width: 100%;
+}
+
+.nav-links a:hover {
+    color: #28ea0b;
+}
+
+/* Active link */
+.nav-links a.active {
+    color: #28ea0b;
+}
+
+.nav-links a.active::after {
+    width: 100%;
+}
+
+/* Shrink on scroll */
+.navbar.scrolled {
+    background: rgba(10, 10, 10, 0.8);
+    padding: 0 60px;
+    height: 55px;
+    transition: all 0.3s ease;
+}

@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="../static/css/dashboard.css">    <!--for local viewing-->
+    <link rel="stylesheet" href="{% static "css/dashboard.css" %}">
+</head>
+
+<body>
+    <div class="navbar">
+        {% include "navbar.html" %}
+    </div>
+    <div class="dashboard-container">
+        <div class="window-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+        </div>
+        <h1>Welcome back, {{ username }}</h1>
+
+        <nav class="nav-bar">
+            <a href="{% url "home" %}">Home</a>
+            <a href="/user/{{user_id}}/manage-notes/">Add/Edit Note</a>
+            <a href="/user/{{ user_id }}/chatbot/">Chatbot</a>
+            <a href="/user/{{ user_id }}/settings/">Settings</a>
+        </nav>
+
+        <section class="docs-section">
+            <h2>My Documents</h2>
+            <div id="docs-grid" class="docs-grid">
+                <!-- Docs will load here -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Example: Fetch docs from backend and display dynamically
+        async function loadDocuments() {
+            const response = await fetch('/api/documents');
+            const docs = await response.json();
+
+            const container = document.getElementById('docs-grid');
+            container.innerHTML = '';
+
+            docs.forEach(doc => {
+                const card = document.createElement('div');
+                card.className = 'doc-card';
+                card.innerHTML = `
+          <div class="doc-icon">📄</div>
+          <p class="doc-name">${doc.name}</p>
+          <small>${doc.date}</small>
+        `;
+                container.appendChild(card);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDocuments);
+    </script>
+</body>
+
+</html>
