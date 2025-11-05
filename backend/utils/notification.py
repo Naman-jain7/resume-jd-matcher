@@ -8,14 +8,14 @@ def send_email(email):
     smtp_port = 587
     otp = generate_otp()
     content=f"Subject: Password Reset OTP\n\nYour OTP to reset password is {otp}"
-    app_password=""
+    app_password="qgez ktax aruu nsvf"
     
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
         server.login(sender_email, app_password)
         server.sendmail(sender_email, email, content)
-        return otp
+        return str(otp)
     except Exception as e:
         return None
     finally:

@@ -71,16 +71,16 @@ def forgot_password_view(request):
             cache.set(email,generated_otp, timeout=300)
             request.session['reset_email']=email
             messages.success(request, "Email has been sent to your account")
-            return redirect("reset-password")
+            return redirect("reset_password")
         
         else:
             messages.error(request, "No account found with this email.")
     return render(request, 'forgot_password.html')
 
-def reset_password_view(request, ):
+def reset_password_view(request):
     email=request.session.get('reset_email')
     if not email:
-        return redirect('forgot-password')
+        return redirect('forgot_password')
     
     if request.method=='POST':
         entered_otp = request.POST.get('otp')
@@ -92,7 +92,7 @@ def reset_password_view(request, ):
             messages.error(request, "OTP expired. Please try again.")
             return redirect('forgot-password')
         
-        if entered_otp==saved_otp:
+        if str(entered_otp).strip()==str(saved_otp).strip():
             cache.delete(email)
             if new_password==recheck_new_password:
                 users_collection.update_one(
