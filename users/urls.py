@@ -12,5 +12,5 @@ urlpatterns = [
     path('reset-password/',views.reset_password_view, name="reset_password"),
     
     path('user/<str:user_id>/', views.dashboard_view, name="dashboard"),
-    path('user/<str:user_id>/settings/', views.settings_view, name="settings"),
+    path('user/<str:user_id>/settings/', views.settings_view, name="settings")
 ]
