@@ -42,6 +42,9 @@ def login_view(request):
         return redirect(f"/user/{str(user['_id'])}/")
     return render(request, "login.html")
 
+def about_view(request):
+    pass
+
 def dashboard_view(request, user_id):
     user = users_collection.find_one({"_id": ObjectId(user_id)})
     if not user:
@@ -104,3 +107,9 @@ def reset_password_view(request, ):
         else:
             messages.error(request, "Invalid OTP.")
     return render(request, 'reset_password.html')
+
+def manage_notes_view(request):
+    pass
+
+def chatbot_view(request):
+    pass

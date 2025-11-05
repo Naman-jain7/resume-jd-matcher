@@ -11,7 +11,9 @@
 </head>
 
 <body>
-    {% include "navbar.html" %}
+    <div class="navbar">
+        {% include "navbar.html" %}
+    </div>
     <form class="glass-container" action="/login/" method="post">
         {% csrf_token %}
         <h2>Login</h2>
@@ -26,8 +28,8 @@
         <button type="submit" class="btn">LOGIN</button>
 
         <div class="links">
-            <a href="/signup/">Sign Up</a>
-            <a href="/forgot-password/">Forgot Password?</a>
+            <a href="{% url "signup" %}">Sign Up</a>
+            <a href="{% url "forgot_password" %}">Forgot Password?</a>
         </div>
     </form>
 </body>

@@ -5,6 +5,17 @@ body {
     height: 100%;
 }
 
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    border-radius: 40px;
+    margin-top: 10px;
+    z-index: 1000;
+}
+
 body {
     background: url("../images/login_page.png") center center/cover no-repeat;
     background-attachment: fixed;

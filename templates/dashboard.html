@@ -6,11 +6,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="../static/css/dashboard.css">    <!--for local viewing-->
     <link rel="stylesheet" href="{% static "css/dashboard.css" %}">
 </head>
 
 <body>
+    <div class="navbar">
+        {% include "navbar.html" %}
+    </div>
     <div class="dashboard-container">
         <div class="window-dots">
             <span class="dot red"></span>
@@ -20,10 +23,10 @@
         <h1>Welcome back, {{ username }}</h1>
 
         <nav class="nav-bar">
-            <button onclick="location.href='/'">Home</button>
-            <button onclick="location.href='manage-notes'">Add/Edit Note</button>
-            <button onclick="location.href='chatbot'">Chatbot</button>
-            <button onclick="location.href='settings'">Settings</button>
+            <a href="{% url "home" %}">Home</a>
+            <a href="/user/{{user_id}}/manage-notes/">Add/Edit Note</a>
+            <a href="/user/{{ user_id }}/chatbot/">Chatbot</a>
+            <a href="/user/{{ user_id }}/settings/">Settings</a>
         </nav>
 
         <section class="docs-section">
