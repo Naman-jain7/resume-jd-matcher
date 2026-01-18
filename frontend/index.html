@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Career Compass | Resume Matcher</title>
+    <link rel="stylesheet" href="/static/index.css">
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-blobs"></div>
+
+    <div class="container">
+        <header>
+            <h1>AI Career <span class="accent">Compass</span></h1>
+            <p>Optimize your resume for the perfect job match using GenAI</p>
+        </header>
+
+        <main class="grid">
+            <!-- FORM START -->
+            <form class="card upload-section" id="match-form">
+
+                <div class="input-group">
+                    <label for="resume">Upload Resume (PDF)</label>
+                    <div class="file-drop-area">
+                        <input type="file" id="resume" name="resume_file" accept=".pdf" required>
+                        <p id="file-name">Click or drag & drop your resume</p>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="jd">Job Description</label>
+                    <textarea id="jd" name="job_description" placeholder="Paste the job description here..."
+                        required></textarea>
+                </div>
+
+                <button type="submit" id="analyze-btn" class="primary-btn">
+                    Analyze & Match
+                </button>
+
+            </form>
+            <!-- FORM END -->
+
+            <section class="results-section" id="results" style="display: none;">
+                <div class="card score-card">
+                    <h3>Match Score</h3>
+                    <div class="score-circle">
+                        <span id="score-value">0</span>%
+                    </div>
+                </div>
+
+                <div class="card skills-card missing">
+                    <h3>Missing Skills</h3>
+                    <ul id="missing-skills-list"></ul>
+                </div>
+
+                <div class="card suggestions-card">
+                    <h3>Rewrite Suggestions</h3>
+                    <ul id="suggestions-list"></ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
