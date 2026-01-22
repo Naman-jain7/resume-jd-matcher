@@ -3,6 +3,8 @@ from fastapi import FastAPI, APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from typing import Optional, List, Dict, Any
 from app.models.schemas import MatchResponse
+from app.graphs.matcher_graph import run_matcher_graph
+from app.services.ingestion import extract_text_from_file
 import uuid
 
 matcher_router = APIRouter(prefix='/api', tags=['matcher'])
@@ -25,13 +27,15 @@ async def match_resume(resume_file: UploadFile = File(...), job_description: str
 
     request_id = str(uuid.uuid4())
 
-    # ------------STUB RESPONSE---------------------
+    resume_text = await extract_text_from_file(resume_file)
+
+    graph_res = run_matcher_graph(resume_text=resume_text, job_description_text = job_description)
+
     return MatchResponse(
         request_id=request_id,
-        match_score=0,
-        matched_skills=[],
-        missing_skills=[],
-        rewrite_suggestions=[],
-        status="stub_response",
+        match_score=graph_result["match_score"],
+        matched_skills=graph_result["matched_skills"],
+        missing_skills=graph_result["missing_skills"],
+        rewrite_suggestions=graph_result["rewrite_suggestions"],
+        status="completed",
     )
-    # ------------STUB RESPONSE---------------------
