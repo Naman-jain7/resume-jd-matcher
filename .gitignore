@@ -1,3 +1,4 @@
 .env
 helper.txt
 __pycache__/
+job-description-matcher/
