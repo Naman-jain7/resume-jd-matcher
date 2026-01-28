@@ -1,13 +1,14 @@
-from typing import TypedDict, List, Dict, Any
+from typing import TypedDict, List, Dict, Any, Optional
 from langgraph.graph import START, StateGraph, END
 from langchain_ollama import ChatOllama
+from langchain_core.output_parsers import JsonOutputParser
 
 from app.prompts.skill_extraction import SKILL_EXTRACTION_PROMPT
 from app.prompts.resume_rewrite import REWRITE_SUGGESTIONS_PROMPT
 from app.prompts.match_score import MATCH_SCORE_PROMPT
 
 llm = ChatOllama(model="llama3.2")
-
+parser = JsonOutputParser()
 class MatcherState(TypedDict):
     resume_text: str
     job_description_text: str
@@ -22,24 +23,24 @@ class MatcherState(TypedDict):
     rewrite_suggestions: List[Dict[str, str]]
 
 
-def extract_skills_node(state: MatcherState) -> MatcherState:
-    chain = SKILL_EXTRACTION_PROMPT | llm
-    result = chain.invoke({
+async def extract_skills_node(state: MatcherState) -> MatcherState:
+    chain = SKILL_EXTRACTION_PROMPT | llm | parser
+    result = await chain.ainvoke({
         'resume_text': state['resume_text'],
         'job_description_text': state['job_description_text']
     })
-    return {**state, 'resume_skills':result.content['resume_skills'],
-        'jd_skills':result.content['job_description_skills']
+    return {**state, 'resume_skills':result['resume_skills'],
+        'jd_skills':result['job_description_skills']
     }
 
-def match_score_node(state: MatcherState) -> MatcherState:
-    chain = MATCH_SCORE_PROMPT | llm
+async def match_score_node(state: MatcherState) -> MatcherState:
+    chain = MATCH_SCORE_PROMPT | llm | parser
 
-    result = chain.invoke({
-        'resume_skills':state['resume_skills'],
-        'job_description_skills': state['jd_skills']
+    result = await chain.ainvoke({
+        'resume_data':state['resume_skills'],
+        'job_description_data': state['jd_skills']
     })
-    parsed = result.content
+    parsed = result
     return {
         **state,
         "match_score": parsed["match_score"],
@@ -47,14 +48,14 @@ def match_score_node(state: MatcherState) -> MatcherState:
         "missing_skills": parsed["missing_skills"],
     }
 
-def rewrite_suggestions_node(state: MatcherState) -> MatcherState:
-    chain = REWRITE_SUGGESTIONS_PROMPT | llm
+async def rewrite_suggestions_node(state: MatcherState) -> MatcherState:
+    chain = REWRITE_SUGGESTIONS_PROMPT | llm | parser
 
-    result = chain.invoke({
+    result = await chain.ainvoke({
         "resume_bullets": state["resume_text"],
-        "job_keywords": state["jd_skills"].get("required_skills", []),
+        "job_keywords": state["jd_skills"],
     })
-    parsed = result.content
+    parsed = result
     return {
         **state,
         "rewrite_suggestions": parsed["rewrite_suggestions"],
@@ -77,7 +78,7 @@ def builder_matcher_graph():
 
 matcher_graph = builder_matcher_graph()
 
-def run_matcher_graph(resume_text: str, job_description_text: str) -> Dict[str, Any]:
+async def run_matcher_graph(resume_text: str, job_description_text: str) -> Dict[str, Any]:
     initial_state: MatcherState = {
         "resume_text": resume_text,
         "job_description_text": job_description_text,
@@ -89,4 +90,4 @@ def run_matcher_graph(resume_text: str, job_description_text: str) -> Dict[str, 
         "rewrite_suggestions": [],
     }
 
-    return matcher_graph.invoke(initial_state)
+    return await matcher_graph.ainvoke(initial_state)
