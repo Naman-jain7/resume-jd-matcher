@@ -3,11 +3,13 @@ from langgraph.graph import START, StateGraph, END
 from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
 
+from langsmith import traceable
+
 from app.prompts.skill_extraction import SKILL_EXTRACTION_PROMPT
 from app.prompts.resume_rewrite import REWRITE_SUGGESTIONS_PROMPT
 from app.prompts.match_score import MATCH_SCORE_PROMPT
 
-llm = ChatOllama(model="llama3.2")
+llm = ChatOllama(model="llama3.2:latest", base_url="http://127.0.0.1:11434")
 parser = JsonOutputParser()
 class MatcherState(TypedDict):
     resume_text: str
@@ -22,7 +24,7 @@ class MatcherState(TypedDict):
 
     rewrite_suggestions: List[Dict[str, str]]
 
-
+@traceable(name='extract_skills_node')
 async def extract_skills_node(state: MatcherState) -> MatcherState:
     chain = SKILL_EXTRACTION_PROMPT | llm | parser
     result = await chain.ainvoke({
@@ -33,6 +35,7 @@ async def extract_skills_node(state: MatcherState) -> MatcherState:
         'jd_skills':result['job_description_skills']
     }
 
+@traceable(name='match_score_node')
 async def match_score_node(state: MatcherState) -> MatcherState:
     chain = MATCH_SCORE_PROMPT | llm | parser
 
@@ -48,6 +51,7 @@ async def match_score_node(state: MatcherState) -> MatcherState:
         "missing_skills": parsed["missing_skills"],
     }
 
+@traceable(name='rewrite_suggestions_node')
 async def rewrite_suggestions_node(state: MatcherState) -> MatcherState:
     chain = REWRITE_SUGGESTIONS_PROMPT | llm | parser
 
@@ -78,6 +82,7 @@ def builder_matcher_graph():
 
 matcher_graph = builder_matcher_graph()
 
+@traceable(name='run_matcher_graph')
 async def run_matcher_graph(resume_text: str, job_description_text: str) -> Dict[str, Any]:
     initial_state: MatcherState = {
         "resume_text": resume_text,

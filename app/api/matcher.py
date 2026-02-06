@@ -2,6 +2,8 @@
 import uuid
 from typing import Any, Dict, List, Optional
 
+from langsmith import traceable
+
 from fastapi import APIRouter, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
@@ -18,6 +20,7 @@ SUPPORTED_FILE_TYPES = {
     "text/plain",
 }
 
+@traceable(name='match_resume')
 @matcher_router.post('/match')
 async def match_resume(resume_file: UploadFile = File(...), job_description: str = Form(...)):
     """ Match resume to job description using AI. Business logic layer will be delegated to langgraph later"""
