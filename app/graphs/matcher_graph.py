@@ -9,7 +9,7 @@ from app.prompts.skill_extraction import SKILL_EXTRACTION_PROMPT
 from app.prompts.resume_rewrite import REWRITE_SUGGESTIONS_PROMPT
 from app.prompts.match_score import MATCH_SCORE_PROMPT
 
-llm = ChatOllama(model="llama3.2:latest", base_url="http://127.0.0.1:11434")
+llm = ChatOllama(model="job-description:latest", base_url="http://127.0.0.1:11434")
 parser = JsonOutputParser()
 class MatcherState(TypedDict):
     resume_text: str
