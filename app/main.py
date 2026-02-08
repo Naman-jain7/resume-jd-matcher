@@ -1,14 +1,13 @@
 from pathlib import Path
-
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-
 from app.api.matcher import matcher_router
 
+# Ensure this points to the directory containing 'frontend'
 BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"
 
 app = FastAPI(title="Resume JD Matcher")
 
@@ -22,9 +21,14 @@ app.add_middleware(
 
 app.include_router(matcher_router)
 
-# app.mount("/static", StaticFiles(directory = BASE_DIR / "frontend"), name="static")
+# 1. Mount static files so the HTML can find /static/index.css and /static/script.js
+# This assumes your CSS/JS are inside the 'frontend' folder
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
-# @app.get("/")
-# def serve_frontend():
-#     return FileResponse(BASE_DIR / "frontend" / "index.html")
+@app.get("/")
+async def serve_frontend():
+    index_path = FRONTEND_DIR / "index.html"
+    if not index_path.exists():
+        return {"error": f"Frontend not found at {index_path}"}
+    return FileResponse(index_path)

@@ -165,3 +165,47 @@ li {
         grid-template-columns: 1fr;
     }
 }
+
+/* Update the grid to prevent it from growing indefinitely */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+    /* Prevents the form card from stretching */
+    height: calc(100vh - 200px);
+    /* Adjust based on your header height */
+}
+
+/* Make results section scrollable */
+.results-section {
+    display: flex;
+    /* Changed from block to flex for better child spacing */
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+    /* Enable vertical scrolling */
+    max-height: 100%;
+    /* Fill the grid height */
+    padding-right: 1rem;
+    /* Space for the scrollbar */
+}
+
+/* Custom Scrollbar for the Results Section */
+.results-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.results-section::-webkit-scrollbar-thumb {
+    background: rgba(79, 70, 229, 0.4);
+    border-radius: 10px;
+}
+
+.results-section::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+/* Ensure cards don't collapse */
+.results-section .card {
+    flex-shrink: 0;
+}

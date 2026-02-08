@@ -25,13 +25,15 @@ class MatcherState(TypedDict):
     rewrite_suggestions: List[Dict[str, str]]
 
 @traceable(name='extract_skills_node')
-async def extract_skills_node(state: MatcherState) -> MatcherState:
+async def extract_skills_node(state: MatcherState) -> Dict[str, Any]:
     chain = SKILL_EXTRACTION_PROMPT | llm | parser
     result = await chain.ainvoke({
         'resume_text': state['resume_text'],
         'job_description_text': state['job_description_text']
     })
-    return {**state, 'resume_skills':result['resume_skills'],
+    
+    return {
+        'resume_skills':result['resume_skills'],
         'jd_skills':result['job_description_skills']
     }
 
@@ -43,12 +45,11 @@ async def match_score_node(state: MatcherState) -> MatcherState:
         'resume_data':state['resume_skills'],
         'job_description_data': state['jd_skills']
     })
-    parsed = result
+
     return {
-        **state,
-        "match_score": parsed["match_score"],
-        "matched_skills": parsed["matched_skills"],
-        "missing_skills": parsed["missing_skills"],
+        "match_score":  result["match_score"],
+        "matched_skills": result["matched_skills"],
+        "missing_skills": result["missing_skills"],
     }
 
 @traceable(name='rewrite_suggestions_node')
@@ -59,10 +60,9 @@ async def rewrite_suggestions_node(state: MatcherState) -> MatcherState:
         "resume_bullets": state["resume_text"],
         "job_keywords": state["jd_skills"],
     })
-    parsed = result
+
     return {
-        **state,
-        "rewrite_suggestions": parsed["rewrite_suggestions"],
+        "rewrite_suggestions": result["rewrite_suggestions"],
     }
 
 def builder_matcher_graph():
@@ -75,7 +75,8 @@ def builder_matcher_graph():
     graph.set_entry_point('extract_skills')
 
     graph.add_edge("extract_skills", "match_score")
-    graph.add_edge("match_score", "rewrite_suggestions")
+    graph.add_edge("extract_skills", "rewrite_suggestions")
+    graph.add_edge("match_score", END)
     graph.add_edge("rewrite_suggestions", END)
 
     return graph.compile()
