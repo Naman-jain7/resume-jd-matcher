@@ -9,7 +9,8 @@ from app.prompts.skill_extraction import SKILL_EXTRACTION_PROMPT
 from app.prompts.resume_rewrite import REWRITE_SUGGESTIONS_PROMPT
 from app.prompts.match_score import MATCH_SCORE_PROMPT
 
-llm = ChatOllama(model="job-description:latest", base_url="http://127.0.0.1:11434")
+matcher_llm = ChatOllama(model="job-description:latest", base_url="http://127.0.0.1:11434")
+extractor_suggester_llm = ChatOllama(model="gemma3:1b", base_url="http://127.0.0.1:11434")
 parser = JsonOutputParser()
 class MatcherState(TypedDict):
     resume_text: str
@@ -26,7 +27,7 @@ class MatcherState(TypedDict):
 
 @traceable(name='extract_skills_node')
 async def extract_skills_node(state: MatcherState) -> Dict[str, Any]:
-    chain = SKILL_EXTRACTION_PROMPT | llm | parser
+    chain = SKILL_EXTRACTION_PROMPT | extractor_suggester_llm | parser
     result = await chain.ainvoke({
         'resume_text': state['resume_text'],
         'job_description_text': state['job_description_text']
@@ -39,7 +40,7 @@ async def extract_skills_node(state: MatcherState) -> Dict[str, Any]:
 
 @traceable(name='match_score_node')
 async def match_score_node(state: MatcherState) -> MatcherState:
-    chain = MATCH_SCORE_PROMPT | llm | parser
+    chain = MATCH_SCORE_PROMPT | matcher_llm | parser
 
     result = await chain.ainvoke({
         'resume_data':state['resume_skills'],
@@ -54,7 +55,7 @@ async def match_score_node(state: MatcherState) -> MatcherState:
 
 @traceable(name='rewrite_suggestions_node')
 async def rewrite_suggestions_node(state: MatcherState) -> MatcherState:
-    chain = REWRITE_SUGGESTIONS_PROMPT | llm | parser
+    chain = REWRITE_SUGGESTIONS_PROMPT | extractor_suggester_llm | parser
 
     result = await chain.ainvoke({
         "resume_bullets": state["resume_text"],
