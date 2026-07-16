@@ -1,4 +1,5 @@
 fastapi
+streamlit
 uvicorn
 pydantic
 python-dotenv
@@ -11,6 +12,6 @@ langchain-ollama
 ollama
 langgraph
 
-pymupdf
+pdfplumber
 jinja2
 python-multipart

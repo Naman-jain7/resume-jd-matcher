@@ -1,7 +1,9 @@
+__pycache__/
+
+.venv/
+
+outputs/
+personal/
 .env
 helper.txt
-__pycache__/
-job-description-matcher/
 rough.ipynb
-outputs/
-tests
