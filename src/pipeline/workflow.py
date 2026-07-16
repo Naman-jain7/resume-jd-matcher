@@ -23,7 +23,7 @@ from langsmith import traceable
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
-from schemas.parse_resume import StructuralMetadata          # noqa: F401 (re-exported)
+from schemas.parse_resume import StructuralMetadata  # noqa: F401 (re-exported)
 from schemas.responses import MatchResponse, RewriteSuggestion
 from src.ingestion.loader import load_pdf_streamlit
 from src.ingestion.parser import parse_resume
@@ -40,8 +40,10 @@ from src.pipeline.state import MatcherState
 # Internal structured-output schemas (LLM response targets, not exposed to API)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class _MatchScoreOutput(BaseModel):
     """Structured output for the score_node LLM call."""
+
     match_score: int = Field(ge=0, le=100, description="ATS match score 0-100.")
     summary: str = Field(description="Concise narrative explaining the match score.")
     matched_skills: List[str] = Field(default_factory=list)
@@ -50,18 +52,21 @@ class _MatchScoreOutput(BaseModel):
 
 class _SkillsOutput(BaseModel):
     """Structured output for the extract_skills_node LLM call."""
+
     resume_skills: Dict[str, Any] = Field(default_factory=dict)
     jd_skills: Dict[str, Any] = Field(default_factory=dict)
 
 
 class _RewriteOutput(BaseModel):
     """Structured output for the rewrite_node LLM call."""
+
     rewrite_suggestions: List[RewriteSuggestion] = Field(default_factory=list)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 1: load
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @traceable(name="load_node")
 def load_node(state: MatcherState) -> Dict[str, Any]:
@@ -81,6 +86,7 @@ def load_node(state: MatcherState) -> Dict[str, Any]:
 # Node 2: parse
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @traceable(name="parse_node")
 def parse_node(state: MatcherState) -> Dict[str, Any]:
     """
@@ -97,6 +103,7 @@ def parse_node(state: MatcherState) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 3a: score  (parallel branch — OllamaProvider)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @traceable(name="score_node")
 async def score_node(state: MatcherState) -> Dict[str, Any]:
@@ -130,8 +137,8 @@ async def score_node(state: MatcherState) -> Dict[str, Any]:
     )
 
     return {
-        "match_score":    result.match_score,
-        "summary":        result.summary,
+        "match_score": result.match_score,
+        "summary": result.summary,
         "matched_skills": result.matched_skills,
         "missing_skills": result.missing_skills,
     }
@@ -140,6 +147,7 @@ async def score_node(state: MatcherState) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 3b: extract_skills  (parallel branch — OllamaLocalProvider)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @traceable(name="extract_skills_node")
 async def extract_skills_node(state: MatcherState) -> Dict[str, Any]:
@@ -174,13 +182,14 @@ async def extract_skills_node(state: MatcherState) -> Dict[str, Any]:
 
     return {
         "resume_skills": result.resume_skills,
-        "jd_skills":     result.jd_skills,
+        "jd_skills": result.jd_skills,
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Node 4: rewrite  (fan-in — OpenRouterProvider)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @traceable(name="rewrite_node")
 async def rewrite_node(state: MatcherState) -> Dict[str, Any]:
@@ -231,6 +240,7 @@ async def rewrite_node(state: MatcherState) -> Dict[str, Any]:
 # Graph assembly
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def build_matcher_graph() -> Any:
     """
     Compile the LangGraph pipeline.
@@ -240,22 +250,22 @@ def build_matcher_graph() -> Any:
     """
     graph: StateGraph = StateGraph(MatcherState)
 
-    graph.add_node("load",           load_node)
-    graph.add_node("parse",          parse_node)
-    graph.add_node("score",          score_node)
+    graph.add_node("load", load_node)
+    graph.add_node("parse", parse_node)
+    graph.add_node("score", score_node)
     graph.add_node("extract_skills", extract_skills_node)
-    graph.add_node("rewrite",        rewrite_node)
+    graph.add_node("rewrite", rewrite_node)
 
     # Sequential spine
-    graph.add_edge(START,   "load")
-    graph.add_edge("load",  "parse")
+    graph.add_edge(START, "load")
+    graph.add_edge("load", "parse")
 
     # Fan-out: parse → both parallel nodes
     graph.add_edge("parse", "score")
     graph.add_edge("parse", "extract_skills")
 
     # Fan-in: rewrite runs only after BOTH parallel nodes complete
-    graph.add_edge("score",          "rewrite")
+    graph.add_edge("score", "rewrite")
     graph.add_edge("extract_skills", "rewrite")
 
     graph.add_edge("rewrite", END)
@@ -269,6 +279,7 @@ matcher_graph = build_matcher_graph()
 # ─────────────────────────────────────────────────────────────────────────────
 # Public entry point
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @traceable(name="run_matcher_graph")
 async def run_matcher_graph(
