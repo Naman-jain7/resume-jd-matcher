@@ -1,3 +1,4 @@
+import re
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Type, Union
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
@@ -12,9 +13,31 @@ from configs.core_config import (
     OPENROUTER_CONFIG,
     settings,
 )
-from src.graphs.tools import tools
 from src.utils.exception import ExternalServiceError
 from src.utils.logger import LLM_LOGGER
+
+
+def _clean_markdown_json(raw_str: str) -> str:
+    """Strip markdown code block fences (e.g. ```json ... ```) and extract JSON body."""
+    if not raw_str:
+        return ""
+
+    cleaned = re.sub(r"^\s*```(?:json)?\s*", "", raw_str, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```\s*$", "", cleaned)
+
+    first_brace = cleaned.find("{")
+    first_bracket = cleaned.find("[")
+    indices = [i for i in [first_brace, first_bracket] if i != -1]
+    if indices:
+        start_idx = min(indices)
+        last_brace = cleaned.rfind("}")
+        last_bracket = cleaned.rfind("]")
+        end_idx = max(last_brace, last_bracket)
+        if end_idx >= start_idx:
+            cleaned = cleaned[start_idx : end_idx + 1]
+
+    return cleaned.strip()
+
 
 
 def _convert_messages(messages: List[Any]) -> List[Any]:
@@ -41,7 +64,9 @@ def _convert_messages(messages: List[Any]) -> List[Any]:
 
     return formatted_messages
 
+
 # ============================================================================================
+
 
 class OllamaLocalProvider:
     """Client for local Ollama generation."""
@@ -50,10 +75,10 @@ class OllamaLocalProvider:
         self,
         temperature: float = 0.4,
         think: bool = False,
-        num_predict:int = OLLAMA_LOCAL_CONFIG['num_predict'],
+        num_predict: int = OLLAMA_LOCAL_CONFIG["num_predict"],
         **default_kwargs: Any,
     ) -> None:
-        
+
         self._validate_connection()
 
         self.temperature = temperature
@@ -62,7 +87,7 @@ class OllamaLocalProvider:
 
         self.llm = ChatOllama(
             model=settings.llm.OLLAMA_LOCAL_MODEL_NAME,
-            base_url=settings.llm.OLLAMA_LOCAL_BASE_URL,
+            base_url="http://localhost:11434",
             temperature=self.temperature,
             num_predict=self.num_predict,
             validate_model_on_init=True,
@@ -79,7 +104,7 @@ class OllamaLocalProvider:
         import urllib.request
 
         # Strips trailing slash if present and builds the root ping path
-        base_url = settings.llm.OLLAMA_LOCAL_BASE_URL.rstrip("/")
+        base_url = "http://localhost:11434"
 
         try:
             # A simple GET request to the root Ollama port (returns 'Ollama is running')
@@ -102,12 +127,22 @@ class OllamaLocalProvider:
         formatted_messages = _convert_messages(messages)
         try:
             if response_format:
-                structured_llm = self.llm.with_structured_output(response_format)
-                return structured_llm.invoke(formatted_messages)  # type: ignore
+                try:
+                    structured_llm = self.llm.with_structured_output(response_format)
+                    return structured_llm.invoke(formatted_messages)  # type: ignore
+                except Exception as struct_err:
+                    LLM_LOGGER.warning(
+                        "Local Ollama with_structured_output failed (%s), falling back to raw JSON parsing.",
+                        struct_err,
+                    )
+                    response = self.llm.invoke(formatted_messages)
+                    raw_text = str(response.content) if hasattr(response, "content") else str(response)
+                    cleaned_json = _clean_markdown_json(raw_text)
+                    return response_format.model_validate_json(cleaned_json)
 
             response = self.llm.invoke(formatted_messages)
             return response.content  # type: ignore
-        
+
         except Exception as e:
             raise ExternalServiceError(
                 message=f"Local Ollama generation failed: {str(e)}",
@@ -123,12 +158,22 @@ class OllamaLocalProvider:
         formatted_messages = _convert_messages(messages)
         try:
             if response_format:
-                structured_llm = self.llm.with_structured_output(response_format)
-                return await structured_llm.ainvoke(formatted_messages)  # type: ignore
+                try:
+                    structured_llm = self.llm.with_structured_output(response_format)
+                    return await structured_llm.ainvoke(formatted_messages)  # type: ignore
+                except Exception as struct_err:
+                    LLM_LOGGER.warning(
+                        "Local Ollama async with_structured_output failed (%s), falling back to raw JSON parsing.",
+                        struct_err,
+                    )
+                    response = await self.llm.ainvoke(formatted_messages)
+                    raw_text = str(response.content) if hasattr(response, "content") else str(response)
+                    cleaned_json = _clean_markdown_json(raw_text)
+                    return response_format.model_validate_json(cleaned_json)
 
             response = await self.llm.ainvoke(formatted_messages)
             return response.content  # type: ignore
-        
+
         except Exception as e:
             raise ExternalServiceError(
                 message=f"Local Ollama async generation failed: {str(e)}",
@@ -149,7 +194,7 @@ class OllamaLocalProvider:
         except Exception as e:
             raise ExternalServiceError(
                 message=f"Local Ollama streaming interrupted: {str(e)}",
-                payload={"model": settings.llm.OLLAMA_LOCAL_MODEL_NAME}
+                payload={"model": settings.llm.OLLAMA_LOCAL_MODEL_NAME},
             ) from e
 
     async def astream(
@@ -166,8 +211,9 @@ class OllamaLocalProvider:
         except Exception as e:
             raise ExternalServiceError(
                 message=f"Local Ollama async streaming interrupted: {str(e)}",
-                payload={"model": settings.llm.OLLAMA_LOCAL_MODEL_NAME}
+                payload={"model": settings.llm.OLLAMA_LOCAL_MODEL_NAME},
             ) from e
+
 
 # ============================================================================================
 
@@ -180,7 +226,7 @@ class OpenRouterProvider:
         max_completion_tokens: int = OPENROUTER_CONFIG["max_completion_tokens"],
         **default_kwargs: Any,
     ) -> None:
-        
+
         self._validate_connection()
         self.temperature = temperature
         self.max_completion_tokens = max_completion_tokens
@@ -230,12 +276,22 @@ class OpenRouterProvider:
         formatted_messages = _convert_messages(messages)
         try:
             if response_format:
-                structured_llm = self.llm.with_structured_output(response_format)
-                return structured_llm.invoke(formatted_messages)  # type: ignore
+                try:
+                    structured_llm = self.llm.with_structured_output(response_format)
+                    return structured_llm.invoke(formatted_messages)  # type: ignore
+                except Exception as struct_err:
+                    LLM_LOGGER.warning(
+                        "OpenRouter with_structured_output failed (%s), falling back to raw JSON parsing.",
+                        struct_err,
+                    )
+                    response = self.llm.invoke(formatted_messages)
+                    raw_text = str(response.content) if hasattr(response, "content") else str(response)
+                    cleaned_json = _clean_markdown_json(raw_text)
+                    return response_format.model_validate_json(cleaned_json)
 
             response = self.llm.invoke(formatted_messages)
             return response.content  # type: ignore
-        
+
         except Exception as e:
             raise ExternalServiceError(
                 message=f"Openrouter generation failed: {str(e)}",
@@ -253,12 +309,22 @@ class OpenRouterProvider:
         formatted_messages = _convert_messages(messages)
         try:
             if response_format:
-                structured_llm = self.llm.with_structured_output(response_format)
-                return await structured_llm.ainvoke(formatted_messages)  # type: ignore
+                try:
+                    structured_llm = self.llm.with_structured_output(response_format)
+                    return await structured_llm.ainvoke(formatted_messages)  # type: ignore
+                except Exception as struct_err:
+                    LLM_LOGGER.warning(
+                        "OpenRouter async with_structured_output failed (%s), falling back to raw JSON parsing.",
+                        struct_err,
+                    )
+                    response = await self.llm.ainvoke(formatted_messages)
+                    raw_text = str(response.content) if hasattr(response, "content") else str(response)
+                    cleaned_json = _clean_markdown_json(raw_text)
+                    return response_format.model_validate_json(cleaned_json)
 
             response = await self.llm.ainvoke(formatted_messages)
             return response.content  # type: ignore
-    
+
         except Exception as e:
             raise ExternalServiceError(
                 message=f"Openrouter async generation failed: {str(e)}",
@@ -284,7 +350,7 @@ class OpenRouterProvider:
                 message=f"Openrouter streaming interrupted: {str(e)}",
                 payload={"model": settings.llm.OPENROUTER_MODEL_NAME},
             ) from e
-    
+
     @traceable(run_type="llm", name="OpenRouter_astream")
     async def astream(
         self,
@@ -316,11 +382,11 @@ class OllamaProvider:
         max_completion_tokens: int = OLLAMA_CONFIG["max_completion_tokens"],
         **default_kwargs: Any,
     ) -> None:
-        
+
         self.temperature = temperature
         self.max_completion_tokens = max_completion_tokens
         self.default_kwargs = default_kwargs
-        
+
         self.llm = ChatOpenAI(
             model=settings.llm.OLLAMA_MODEL_NAME,
             api_key=settings.llm.OLLAMA_API_KEY,  # type: ignore
@@ -331,7 +397,7 @@ class OllamaProvider:
             max_retries=settings.llm.MAX_RETRIES,
             **self.default_kwargs,
         )
-        
+
         LLM_LOGGER.info(
             "Ollama provider initialized (ChatOpenAI wrapper): model=%s",
             settings.llm.OLLAMA_MODEL_NAME,
@@ -348,12 +414,22 @@ class OllamaProvider:
         formatted_messages = _convert_messages(messages)
         try:
             if response_format:
-                structured_llm = self.llm.with_structured_output(response_format)
-                return structured_llm.invoke(formatted_messages)  # type: ignore
+                try:
+                    structured_llm = self.llm.with_structured_output(response_format)
+                    return structured_llm.invoke(formatted_messages)  # type: ignore
+                except Exception as struct_err:
+                    LLM_LOGGER.warning(
+                        "Ollama with_structured_output failed (%s), falling back to raw JSON parsing.",
+                        struct_err,
+                    )
+                    response = self.llm.invoke(formatted_messages)
+                    raw_text = str(response.content) if hasattr(response, "content") else str(response)
+                    cleaned_json = _clean_markdown_json(raw_text)
+                    return response_format.model_validate_json(cleaned_json)
 
             response = self.llm.invoke(formatted_messages)
             return response.content  # type: ignore
-        
+
         except Exception as e:
             raise ExternalServiceError(
                 message=f"Ollama generation failed: {str(e)}",
@@ -371,12 +447,22 @@ class OllamaProvider:
         formatted_messages = _convert_messages(messages)
         try:
             if response_format:
-                structured_llm = self.llm.with_structured_output(response_format)
-                return await structured_llm.ainvoke(formatted_messages)  # type: ignore
+                try:
+                    structured_llm = self.llm.with_structured_output(response_format)
+                    return await structured_llm.ainvoke(formatted_messages)  # type: ignore
+                except Exception as struct_err:
+                    LLM_LOGGER.warning(
+                        "Ollama async with_structured_output failed (%s), falling back to raw JSON parsing.",
+                        struct_err,
+                    )
+                    response = await self.llm.ainvoke(formatted_messages)
+                    raw_text = str(response.content) if hasattr(response, "content") else str(response)
+                    cleaned_json = _clean_markdown_json(raw_text)
+                    return response_format.model_validate_json(cleaned_json)
 
             response = await self.llm.ainvoke(formatted_messages)
             return response.content  # type: ignore
-        
+
         except Exception as e:
             raise ExternalServiceError(
                 message=f"Ollama async generation failed: {str(e)}",
@@ -445,6 +531,6 @@ class ResilientLLMManager:
 # ============================================================================================
 
 llm = ResilientLLMManager(
-    primary_provider = OllamaLocalProvider(), 
-    backup_providers = [OllamaProvider(), OpenRouterProvider()]
+    primary_provider=OllamaLocalProvider(),
+    backup_providers=[OllamaProvider(), OpenRouterProvider()],
 )

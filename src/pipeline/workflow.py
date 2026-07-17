@@ -112,7 +112,7 @@ async def score_node(state: MatcherState) -> Dict[str, Any]:
     Uses raw resume_text + jd_text so it can run in parallel with extract_skills.
     Produces: match_score, summary, matched_skills, missing_skills
     """
-    provider = OllamaProvider()
+    provider = OllamaLocalProvider()
 
     messages = [
         {
@@ -199,7 +199,7 @@ async def rewrite_node(state: MatcherState) -> Dict[str, Any]:
     Uses the merged state (skills + score data) for rich, targeted suggestions.
     Produces: rewrite_suggestions
     """
-    provider = OpenRouterProvider()
+    provider = OllamaLocalProvider()
 
     # Flatten jd_skills into a keyword string for the prompt
     if state.jd_skills:
@@ -314,12 +314,12 @@ async def run_matcher_graph(
         structural_metadata=None,
     )
 
-    final: MatcherState = await matcher_graph.ainvoke(initial_state)  # type: ignore[assignment]
+    final: Dict[str, Any] = await matcher_graph.ainvoke(initial_state)
 
     return MatchResponse(
-        match_score=final.match_score,
-        summary=final.summary,
-        matched_skills=final.matched_skills,
-        missing_skills=final.missing_skills,
-        rewrite_suggestions=final.rewrite_suggestions,
+        match_score=final["match_score"],
+        summary=final["summary"],
+        matched_skills=final.get("matched_skills", []),
+        missing_skills=final.get("missing_skills", []),
+        rewrite_suggestions=final.get("rewrite_suggestions", []),
     )

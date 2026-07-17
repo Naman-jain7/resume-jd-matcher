@@ -31,6 +31,7 @@ from src.llm.prompts import STRUCTURAL_PROMPT_INSTRUCTION
 # Heuristic pre-analysis helpers
 # ---------------------------------------------------------------------------
 
+
 def _detect_layout_type(text: str) -> str:
     """
     Coarse heuristic: infer the visual layout architecture from text markers.
@@ -60,6 +61,7 @@ def _detect_layout_type(text: str) -> str:
 
     return "single-column"
 
+
 def _has_tables(text: str) -> bool:
     """True if the text contains at least one markdown table (from the loader)."""
     table_rows = [l for l in text.splitlines() if l.startswith("|") and "|" in l[1:]]
@@ -75,8 +77,8 @@ def _has_bullet_points(text: str) -> bool:
 def _pre_analyse(text: str) -> Dict[str, Any]:
     """Return a lightweight metadata dict used to ground the LLM prompt."""
     return {
-        "layout_type":      _detect_layout_type(text),
-        "has_tables":       _has_tables(text),
+        "layout_type": _detect_layout_type(text),
+        "has_tables": _has_tables(text),
         "has_bullet_points": _has_bullet_points(text),
     }
 
@@ -84,6 +86,7 @@ def _pre_analyse(text: str) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Public parser entry point
 # ---------------------------------------------------------------------------
+
 
 def parse_resume(extracted_text: str) -> Dict[str, Any]:
     """
@@ -112,9 +115,10 @@ def parse_resume(extracted_text: str) -> Dict[str, Any]:
     #    an f-string style template, so we substitute with str.replace to
     #    avoid KeyError from .format().
     system_content = (
-        STRUCTURAL_PROMPT_INSTRUCTION
-        .replace("{metadata['layout_type']}",      str(metadata["layout_type"]))
-        .replace("{metadata['has_tables']}",       str(metadata["has_tables"]))
+        STRUCTURAL_PROMPT_INSTRUCTION.replace(
+            "{metadata['layout_type']}", str(metadata["layout_type"])
+        )
+        .replace("{metadata['has_tables']}", str(metadata["has_tables"]))
         .replace("{metadata['has_bullet_points']}", str(metadata["has_bullet_points"]))
     )
 
@@ -130,25 +134,19 @@ def parse_resume(extracted_text: str) -> Dict[str, Any]:
         {
             "role": "system",
             "content": (
-                system_content.strip()
-                + "\n\n"
+                system_content.strip() + "\n\n"
                 "Analyse the resume text below and return ONLY a structured JSON "
                 "object matching the requested schema. Do NOT add any explanation."
             ),
         },
         {
             "role": "user",
-            "content": (
-                "Resume text to analyse:\n\n"
-                + truncated_text
-            ),
+            "content": ("Resume text to analyse:\n\n" + truncated_text),
         },
     ]
 
     # 4. Call the LLM with structured output ----------------------------------
-    provider = OllamaLocalProvider(
-        temperature=0.0,   # deterministic – layout classification needs no creativity
-    )
+    provider = OllamaLocalProvider(temperature=0.0)
 
     structural_metadata: StructuralMetadata = provider.generate(  # type: ignore[assignment]
         messages=messages,
@@ -157,6 +155,6 @@ def parse_resume(extracted_text: str) -> Dict[str, Any]:
 
     # 5. Return canonical output dict -----------------------------------------
     return {
-        "normalized_content":  extracted_text,
+        "normalized_content": extracted_text,
         "structural_metadata": structural_metadata,
     }
