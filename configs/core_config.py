@@ -25,7 +25,7 @@ class LLMSettings(BaseSettings):
 
     OLLAMA_LOCAL_PROVIDER_NAME: str = Field(..., validation_alias="OLLAMA_LOCAL_PROVIDER_NAME")
     OLLAMA_LOCAL_MODEL_NAME: str = Field(..., validation_alias="OLLAMA_LOCAL_MODEL_NAME")
-    OLLAMA_LOCAL_BASE_URL: str = Field(default="http://localhost:11434", validation_alias="OLLAMA_LOCAL_BASE_URL")
+    # OLLAMA_LOCAL_BASE_URL: str = Field(default="http://localhost:11434", validation_alias="OLLAMA_LOCAL_BASE_URL")
     OLLAMA_LOCAL_PRIORITY: Annotated[int, Field(..., validation_alias="OLLAMA_LOCAL_PRIORITY")]
 
     TIMEOUT: int = Field(default=1, validation_alias="TIMEOUT")
@@ -69,7 +69,7 @@ class Settings(BaseSettings):
 
     llm: LLMSettings = Field(default_factory=lambda: LLMSettings())  # type: ignore
     embedding: EmbeddingSettings = Field(default_factory=lambda: EmbeddingSettings())  # type: ignore
-    db: FirebaseSettings = Field(default_factory=lambda: FirebaseSettings())  # type: ignore
+    db: DatabaseConfig = Field(default_factory=lambda: DatabaseConfig())  # type: ignore
     app: AppConfig = Field(default_factory=lambda: AppConfig()) # type: ignore
 
 
